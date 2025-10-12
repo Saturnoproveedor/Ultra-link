@@ -1,0 +1,436 @@
+
+
+```html
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Turnos - Barbería</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .tabs {
+            display: flex;
+            background: #f5f5f5;
+            border-bottom: 2px solid #ddd;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            background: #f5f5f5;
+            border: none;
+            font-size: 1.1em;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .tab:hover {
+            background: #e0e0e0;
+        }
+
+        .tab.active {
+            background: white;
+            color: #667eea;
+            border-bottom: 3px solid #667eea;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.5s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+            width: 100%;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .turnos-list {
+            display: grid;
+            gap: 15px;
+        }
+
+        .turno-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            border-left: 5px solid #667eea;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .turno-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .turno-card h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .turno-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .turno-info p {
+            margin: 5px 0;
+            color: #555;
+        }
+
+        .turno-info strong {
+            color: #333;
+        }
+
+        .delete-btn {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            padding: 8px 15px;
+            margin-top: 10px;
+            width: auto;
+            display: inline-block;
+        }
+
+        .estado-select {
+            margin-top: 10px;
+            width: 200px;
+        }
+
+        .estado-confirmado {
+            border-left-color: #28a745;
+        }
+
+        .estado-cancelado {
+            border-left-color: #dc3545;
+            opacity: 0.7;
+        }
+
+        .estado-pendiente {
+            border-left-color: #ffc107;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .empty-state svg {
+            width: 100px;
+            height: 100px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .tabs {
+                flex-direction: column;
+            }
+
+            .content {
+                padding: 20px;
+            }
+
+            .turno-info {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>💈 Sistema de Turnos</h1>
+            <p>Gestión de citas para barbería</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="cambiarTab('agendar')">📅 Agendar Turno</button>
+            <button class="tab" onclick="cambiarTab('ver')">📋 Ver Turnos</button>
+        </div>
+
+        <div class="content">
+            <!-- Tab Agendar -->
+            <div id="agendar" class="tab-content active">
+                <h2 style="margin-bottom: 20px;">Agendar Nuevo Turno</h2>
+                <form id="turnoForm">
+                    <div class="form-group">
+                        <label for="nombre">Nombre del Cliente</label>
+                        <input type="text" id="nombre" required placeholder="Ingrese el nombre completo">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="telefono">Teléfono</label>
+                        <input type="tel" id="telefono" required placeholder="Ej: +54 9 11 1234-5678">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="servicio">Servicio</label>
+                        <select id="servicio" required>
+                            <option value="">Seleccione un servicio</option>
+                            <option value="Corte de cabello">Corte de cabello</option>
+                            <option value="Afeitado">Afeitado</option>
+                            <option value="Corte + Barba">Corte + Barba</option>
+                            <option value="Tinte">Tinte</option>
+                            <option value="Tratamiento capilar">Tratamiento capilar</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="fecha">Fecha</label>
+                        <input type="date" id="fecha" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="hora">Hora</label>
+                        <input type="time" id="hora" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="notas">Notas (opcional)</label>
+                        <textarea id="notas" rows="3" placeholder="Agregar alguna observación..."></textarea>
+                    </div>
+
+                    <button type="submit">✅ Confirmar Turno</button>
+                </form>
+            </div>
+
+            <!-- Tab Ver Turnos -->
+            <div id="ver" class="tab-content">
+                <h2 style="margin-bottom: 20px;">Turnos Agendados</h2>
+                <div id="turnosList" class="turnos-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let turnos = [];
+        let nextId = 1;
+
+        // Cargar turnos guardados
+        function cargarTurnos() {
+            const stored = localStorage.getItem('turnos');
+            if (stored) {
+                turnos = JSON.parse(stored);
+                nextId = Math.max(...turnos.map(t => t.id), 0) + 1;
+            }
+        }
+
+        // Guardar turnos
+        function guardarTurnos() {
+            localStorage.setItem('turnos', JSON.stringify(turnos));
+        }
+
+        // Cambiar de tab
+        function cambiarTab(tabName) {
+            // Actualizar tabs
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+
+            if (tabName === 'ver') {
+                mostrarTurnos();
+            }
+        }
+
+        // Agendar turno
+        document.getElementById('turnoForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const turno = {
+                id: nextId++,
+                nombre: document.getElementById('nombre').value,
+                telefono: document.getElementById('telefono').value,
+                servicio: document.getElementById('servicio').value,
+                fecha: document.getElementById('fecha').value,
+                hora: document.getElementById('hora').value,
+                notas: document.getElementById('notas').value,
+                estado: 'pendiente',
+                fechaCreacion: new Date().toISOString()
+            };
+
+            turnos.push(turno);
+            guardarTurnos();
+
+            alert('✅ Turno agendado exitosamente!');
+            this.reset();
+        });
+
+        // Mostrar turnos
+        function mostrarTurnos() {
+            const lista = document.getElementById('turnosList');
+            
+            if (turnos.length === 0) {
+                lista.innerHTML = `
+                    <div class="empty-state">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                        <h3>No hay turnos agendados</h3>
+                        <p>Los turnos que agendes aparecerán aquí</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Ordenar por fecha y hora
+            const turnosOrdenados = [...turnos].sort((a, b) => {
+                const fechaA = new Date(a.fecha + ' ' + a.hora);
+                const fechaB = new Date(b.fecha + ' ' + b.hora);
+                return fechaA - fechaB;
+            });
+
+            lista.innerHTML = turnosOrdenados.map(turno => `
+                <div class="turno-card estado-${turno.estado}">
+                    <h3>👤 ${turno.nombre}</h3>
+                    <div class="turno-info">
+                        <p><strong>📞 Teléfono:</strong> ${turno.telefono}</p>
+                        <p><strong>✂️ Servicio:</strong> ${turno.servicio}</p>
+                        <p><strong>📅 Fecha:</strong> ${formatearFecha(turno.fecha)}</p>
+                        <p><strong>🕐 Hora:</strong> ${turno.hora}</p>
+                        ${turno.notas ? `<p><strong>📝 Notas:</strong> ${turno.notas}</p>` : ''}
+                    </div>
+                    <div style="margin-top: 15px;">
+                        <label><strong>Estado:</strong></label>
+                        <select class="estado-select" onchange="cambiarEstado(${turno.id}, this.value)">
+                            <option value="pendiente" ${turno.estado === 'pendiente' ? 'selected' : ''}>⏳ Pendiente</option>
+                            <option value="confirmado" ${turno.estado === 'confirmado' ? 'selected' : ''}>✅ Confirmado</option>
+                            <option value="cancelado" ${turno.estado === 'cancelado' ? 'selected' : ''}>❌ Cancelado</option>
+                        </select>
+                    </div>
+                    <button class="delete-btn" onclick="eliminarTurno(${turno.id})">🗑️ Eliminar</button>
+                </div>
+            `).join('');
+        }
+
+        // Formatear fecha
+        function formatearFecha(fecha) {
+            const opciones = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            return new Date(fecha + 'T00:00:00').toLocaleDateString('es-ES', opciones);
+        }
+
+        // Cambiar estado
+        function cambiarEstado(id, nuevoEstado) {
+            const turno = turnos.find(t => t.id === id);
+            if (turno) {
+                turno.estado = nuevoEstado;
+                guardarTurnos();
+                mostrarTurnos();
+            }
+        }
+
+        // Eliminar turno
+        function eliminarTurno(id) {
+            if (confirm('¿Estás seguro de que quieres eliminar este turno?')) {
+                turnos = turnos.filter(t => t.id !== id);
+                guardarTurnos();
+                mostrarTurnos();
+            }
+        }
+
+        // Establecer fecha mínima como hoy
+        document.getElementById('fecha').min = new Date().toISOString().split('T')[0];
+
+        // Inicializar
+        cargarTurnos();
+    </script>
+</body>
+</html>
+```
+

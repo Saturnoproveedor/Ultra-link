@@ -1,0 +1,1508 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestor de Ventas - ULTRA LINK</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-body: linear-gradient(135deg, #f0f4f8 0%, #e2ebf0 100%);
+            --bg-container: white;
+            --bg-light: #f9fafb;
+            --bg-header: linear-gradient(135deg, #0077b6, #0096c7);
+            --text-color: #1f2937;
+            --text-secondary: #4b5563;
+            --primary: #0077b6;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --border: #e5e7eb;
+            --shadow: rgba(0,0,0,0.1);
+        }
+
+        .dark-mode {
+            --bg-body: #111827;
+            --bg-container: #1f2937;
+            --bg-light: #374151;
+            --bg-header: linear-gradient(135deg, #023e8a, #0096c7);
+            --text-color: #f3f4f6;
+            --text-secondary: #9ca3af;
+            --primary: #48cae4;
+            --success: #34d399;
+            --warning: #fcd34d;
+            --danger: #f87171;
+            --border: #4b5563;
+            --shadow: rgba(0,0,0,0.4);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-body);
+            color: var(--text-color);
+            min-height: 100vh;
+            padding: 1rem;
+            transition: background 0.5s, color 0.5s;
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .loading-overlay.hidden {
+            display: none;
+        }
+
+        .spinner {
+            border: 5px solid rgba(255, 255, 255, 0.1);
+            border-top: 5px solid #0077b6;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: white;
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: var(--bg-container);
+            border-radius: 1.25rem;
+            box-shadow: 0 20px 60px var(--shadow);
+            overflow: hidden;
+            transition: background 0.5s, box-shadow 0.5s;
+        }
+
+        .header {
+            background: var(--bg-header);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+            position: relative;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 0.75rem;
+        }
+
+        .logo-container i {
+            font-size: 1.5rem;
+            color: #fff;
+            animation: pulse 2s infinite;
+        }
+
+        .logo-container .logo-text {
+            font-size: 1.2rem;
+            margin: 0;
+            font-weight: 800;
+            letter-spacing: 1px;
+            text-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin: 0.5rem 0 0 0;
+            font-weight: 800;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 0.95rem;
+            margin-top: 0.25rem;
+        }
+
+        .cloud-status {
+            position: absolute;
+            top: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(16, 185, 129, 0.2);
+            color: white;
+            padding: 0.4rem 1rem;
+            border-radius: 2rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .cloud-status.connected {
+            background: rgba(16, 185, 129, 0.3);
+        }
+
+        .cloud-status.error {
+            background: rgba(239, 68, 68, 0.3);
+        }
+
+        .cloud-status i {
+            animation: pulse 2s infinite;
+        }
+
+        .clock-display {
+            position: absolute;
+            top: 1.5rem;
+            left: 2rem;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .theme-switch {
+            position: absolute;
+            top: 1.5rem;
+            right: 2rem;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            color: white;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .theme-switch:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .theme-switch i {
+            font-size: 1.2rem;
+        }
+
+        @media (max-width: 768px) {
+            .clock-display {
+                position: static;
+                display: inline-block;
+                margin-bottom: 1rem;
+            }
+            .theme-switch {
+                top: auto;
+                bottom: 1rem;
+                right: 1rem;
+            }
+            .header {
+                padding-top: 3.5rem;
+            }
+            .cloud-status {
+                top: 0.5rem;
+                font-size: 0.7rem;
+                padding: 0.3rem 0.8rem;
+            }
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+            padding: 1.5rem;
+            background: var(--bg-light);
+            border-bottom: 1px solid var(--border);
+            transition: background 0.5s;
+        }
+
+        .stat-card {
+            background: var(--bg-container);
+            padding: 1rem 1.5rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            border-left: 5px solid var(--primary);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 16px var(--shadow);
+        }
+
+        .dark-mode .stat-card {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .stat-card h3 {
+            font-size: 1.75rem;
+            color: var(--text-color);
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-card p {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .stat-card.ventas {
+            border-left-color: var(--primary);
+        }
+
+        .stat-card.vencidos {
+            border-left-color: var(--danger);
+        }
+
+        .stat-card.por-vencer {
+            border-left-color: var(--warning);
+        }
+
+        .stat-card.clientes {
+            border-left-color: var(--success);
+        }
+
+        .panel-tabs {
+            display: flex;
+            background: var(--bg-container);
+            border-bottom: 2px solid var(--border);
+            padding: 0 1.5rem;
+            overflow-x: auto;
+            transition: background 0.5s;
+        }
+
+        .tab {
+            padding: 1rem 1.5rem;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-size: 1rem;
+            color: var(--text-secondary);
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+
+        .tab:hover {
+            color: var(--primary);
+            background: var(--bg-light);
+        }
+
+        .tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+            font-weight: 600;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 2rem;
+            animation: fadeIn 0.3s;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text-color);
+            font-size: 0.9rem;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            padding: 0.75rem;
+            border: 2px solid var(--border);
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            background: var(--bg-container);
+            color: var(--text-color);
+            transition: all 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(0, 119, 182, 0.1);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1001;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5);
+            animation: fadeIn 0.3s;
+        }
+
+        .modal-content {
+            background-color: var(--bg-container);
+            margin: 5% auto;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 30px var(--shadow);
+            width: 90%;
+            max-width: 900px;
+            position: relative;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        .close {
+            color: var(--text-secondary);
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            transition: color 0.3s;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: var(--danger);
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .modal-content h2 {
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0.5rem;
+            color: var(--primary);
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 600;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #005f99;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 119, 182, 0.4);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .btn-whatsapp {
+            background: #25d366;
+            color: white;
+        }
+
+        .btn-whatsapp:hover {
+            background: #128c7e;
+        }
+
+        .btn-sm {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.875rem;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            border-radius: 0.75rem;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1200px;
+        }
+
+        thead {
+            background: var(--bg-light);
+            color: var(--text-color);
+        }
+
+        .dark-mode thead {
+            background: #374151;
+            color: var(--text-color);
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+            vertical-align: middle;
+        }
+
+        tbody tr {
+            transition: background 0.3s;
+        }
+
+        tbody tr:hover {
+            background: var(--bg-light);
+        }
+
+        .dark-mode tbody tr:hover {
+            background: #374151;
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.75rem;
+            font-weight: 500;
+        }
+
+        .alert-danger {
+            background: #fee2e2;
+            color: #991b1b;
+            border-left: 5px solid var(--danger);
+        }
+
+        .dark-mode .alert-danger {
+            background: #450a0a;
+            color: #fca5a5;
+        }
+
+        .status-badge {
+            padding: 0.375rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: inline-block;
+            text-align: center;
+            animation: bounceIn 0.5s;
+        }
+
+        .status-active {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-expiring {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-expired {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .dark-mode .status-active {
+            background: #166534;
+            color: #a7f3d0;
+        }
+
+        .dark-mode .status-expiring {
+            background: #92400e;
+            color: #fcd34d;
+        }
+
+        .dark-mode .status-expired {
+            background: #7f1d1d;
+            color: #fca5a5;
+        }
+
+        #pushNotification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--danger);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 12px var(--shadow);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            opacity: 0;
+            transform: translateY(100%);
+            transition: all 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            font-weight: 600;
+            max-width: 400px;
+        }
+
+        #pushNotification.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        #pushNotification button {
+            margin-left: 15px;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 0.5rem;
+            cursor: pointer;
+        }
+
+        .footer {
+            padding: 1.5rem;
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            border-top: 1px solid var(--border);
+            background: var(--bg-light);
+            transition: background 0.5s, color 0.5s;
+        }
+
+        .footer strong {
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        .footer .device-id {
+            font-size: 0.75rem;
+            margin-top: 0.5rem;
+            opacity: 0.7;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes slideIn {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        @keyframes bounceIn {
+            0% { opacity: 0; transform: scale(0.3); }
+            50% { opacity: 1; transform: scale(1.05); }
+            70% { transform: scale(0.9); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+        <div class="loading-text">Cargando datos desde la nube...</div>
+    </div>
+
+    <div class="container">
+        <header class="header">
+            <div class="cloud-status" id="cloudStatus">
+                <i class="fas fa-cloud"></i>
+                <span>Conectando...</span>
+            </div>
+            <div class="clock-display" id="clockDisplay"></div>
+            <button class="theme-switch" id="themeSwitch">
+                <i class="fas fa-sun"></i>
+            </button>
+            <div class="logo-container">
+                <i class="fas fa-satellite-dish"></i>
+                <h2 class="logo-text">ULTRA LINK</h2>
+            </div>
+            <h1 id="welcomeMessage">Gestor de Ventas</h1>
+            <p>Panel de Control Centralizado con Almacenamiento en la Nube</p>
+        </header>
+
+        <div class="stats">
+            <div class="stat-card ventas">
+                <p>Ganancia del Mes</p>
+                <h3 id="gananciaMensual">$0.00</h3>
+            </div>
+            <div class="stat-card clientes">
+                <p>Clientes Activos</p>
+                <h3 id="totalClientes">0</h3>
+            </div>
+            <div class="stat-card por-vencer">
+                <p>Servicios por Vencer (7 días)</p>
+                <h3 id="serviciosPorVencer">0</h3>
+            </div>
+            <div class="stat-card vencidos">
+                <p>Servicios Vencidos</p>
+                <h3 id="serviciosVencidos">0</h3>
+            </div>
+        </div>
+
+        <div class="panel-tabs">
+            <button class="tab active" data-tab="ventas-clientes-tab">
+                <i class="fas fa-users"></i> Ventas & Clientes
+            </button>
+            <button class="tab" data-tab="vencimientos-tab">
+                <i class="fas fa-exclamation-triangle"></i> Vencimientos
+            </button>
+            <button class="tab" data-tab="estadisticas-tab">
+                <i class="fas fa-chart-line"></i> Estadísticas
+            </button>
+        </div>
+
+        <div id="ventas-clientes-tab" class="tab-content active">
+            <h2>Clientes y Servicios Activos</h2>
+            <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+                <button class="btn btn-primary" onclick="openModal('modalNuevaVenta')">
+                    <i class="fas fa-plus"></i> Registrar Nueva Venta
+                </button>
+                <button class="btn btn-success" onclick="exportToCSV()">
+                    <i class="fas fa-file-excel"></i> Exportar a Excel
+                </button>
+            </div>
+            <div class="table-container">
+                <table id="tablaVentas">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Cliente</th>
+                            <th>WhatsApp</th>
+                            <th>Plataforma</th>
+                            <th>Vence</th>
+                            <th>Precio</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="vencimientos-tab" class="tab-content">
+            <h2>Servicios por Vencer y Vencidos</h2>
+            <div class="alert alert-danger" id="alertaVencimiento" style="display:none;">
+                <i class="fas fa-exclamation-circle fa-2x"></i>
+                <div>
+                    <strong>¡Atención!</strong> Tienes <span id="countVencidos">0</span> servicio(s) Vencido(s) y <span id="countPorVencer">0</span> por Vencer en los próximos 7 días.
+                </div>
+            </div>
+            <div class="table-container">
+                <table id="tablaVencimientos">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Cliente</th>
+                            <th>Plataforma</th>
+                            <th>Vence</th>
+                            <th>Días Rest.</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="estadisticas-tab" class="tab-content">
+            <h2>Estadísticas de Ganancias</h2>
+            <p style="color: var(--text-secondary);">Visualización de la performance de ventas y ganancias.</p>
+            <div class="stats" style="margin-top: 1rem;">
+                <div class="stat-card ventas" style="border-left-color: var(--primary);">
+                    <p>Ganancia Diaria</p>
+                    <h3 id="gananciaDiaria">$0.00</h3>
+                </div>
+                <div class="stat-card clientes" style="border-left-color: var(--success);">
+                    <p>Ganancia Semanal</p>
+                    <h3 id="gananciaSemanal">$0.00</h3>
+                </div>
+                <div class="stat-card por-vencer" style="border-left-color: var(--warning);">
+                    <p>Ganancia Mensual</p>
+                    <h3 id="gananciaMensual2">$0.00</h3>
+                </div>
+                <div class="stat-card vencidos" style="border-left-color: var(--danger);">
+                    <p>Ganancia Anual</p>
+                    <h3 id="gananciaAnual">$0.00</h3>
+                </div>
+            </div>
+            <p style="margin-top: 1.5rem; font-size: 0.85rem; color: var(--text-secondary);">*Nota: Internet ilimitado exclusivo para revendedores! Para más info contacta al Desarrollador.</p>
+        </div>
+
+        <footer class="footer">
+            <p>© 2024 <strong>ULTRA LINK</strong> Logística Digital. Todos los derechos reservados.</p>
+            <p style="font-style: italic;">Diseño y Código bajo Licencia Estándar de Normativas de Negocio y Logística Digital.</p>
+            <a href="#" onclick="contactarDesarrollador()" style="color: var(--primary); text-decoration: none;">Contactar Desarrollador</a>
+            <div class="device-id">ID Dispositivo: <span id="deviceIdDisplay"></span></div>
+        </footer>
+    </div>
+
+       <!-- MODALES -->
+    <div id="modalNuevaVenta" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('modalNuevaVenta')">&times;</span>
+            <h2>Registrar Nueva Venta</h2>
+            <form id="formNuevaVenta" onsubmit="registrarVenta(event)">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="plataforma">Plataforma</label>
+                        <select id="plataforma" required>
+                            <option value="">-- Seleccionar --</option>
+                            <option value="Netflix">Netflix</option>
+                            <option value="Disney+">Disney+</option>
+                            <option value="HBO Max">HBO Max</option>
+                            <option value="Amazon Prime Video">Amazon Prime Video</option>
+                            <option value="Apple TV+">Apple TV+</option>
+                            <option value="Paramount+">Paramount+</option>
+                            <option value="Star+">Star+</option>
+                            <option value="Crunchyroll">Crunchyroll</option>
+                            <option value="Spotify">Spotify</option>
+                            <option value="YouTube Premium">YouTube Premium</option>
+                            <option value="Deezer">Deezer</option>
+                            <option value="DAZN">DAZN</option>
+                            <option value="Flow Max">Flow Max</option>
+                            <option value="Otro">Otro</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="nombreCliente">Nombre del Cliente</label>
+                        <input type="text" id="nombreCliente" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="whatsappCliente">Número de WhatsApp (Sin 0 ni 15)</label>
+                        <input type="tel" id="whatsappCliente" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="precioVenta">Precio ($)</label>
+                        <input type="number" id="precioVenta" min="0" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="fechaEntrega">Fecha de Entrega (Inicio)</label>
+                        <input type="date" id="fechaEntrega" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="fechaVencimiento">Fecha de Vencimiento</label>
+                        <input type="date" id="fechaVencimiento" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="datosCuenta">Datos de Cuenta/Servicio (Usuario/Clave)</label>
+                    <textarea id="datosCuenta" rows="3"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Guardar Venta
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div id="modalEditarVenta" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('modalEditarVenta')">&times;</span>
+            <h2>Editar Venta ID: <span id="editVentaIdDisplay"></span></h2>
+            <form id="formEditarVenta" onsubmit="guardarEdicion(event)">
+                <input type="hidden" id="editVentaId">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="editPlataforma">Plataforma</label>
+                        <select id="editPlataforma" required>
+                            <option value="Netflix">Netflix</option>
+                            <option value="Disney+">Disney+</option>
+                            <option value="HBO Max">HBO Max</option>
+                            <option value="Amazon Prime Video">Amazon Prime Video</option>
+                            <option value="Apple TV+">Apple TV+</option>
+                            <option value="Paramount+">Paramount+</option>
+                            <option value="Star+">Star+</option>
+                            <option value="Crunchyroll">Crunchyroll</option>
+                            <option value="Spotify">Spotify</option>
+                            <option value="YouTube Premium">YouTube Premium</option>
+                            <option value="Deezer">Deezer</option>
+                            <option value="DAZN">DAZN</option>
+                            <option value="Flow Max">Flow Max</option>
+                            <option value="Otro">Otro</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="editNombreCliente">Nombre del Cliente</label>
+                        <input type="text" id="editNombreCliente" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editWhatsappCliente">Número de WhatsApp (Sin 0 ni 15)</label>
+                        <input type="tel" id="editWhatsappCliente" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editPrecioVenta">Precio ($)</label>
+                        <input type="number" id="editPrecioVenta" min="0" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editFechaEntrega">Fecha de Entrega (Inicio)</label>
+                        <input type="date" id="editFechaEntrega" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editFechaVencimiento">Fecha de Vencimiento</label>
+                        <input type="date" id="editFechaVencimiento" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="editDatosCuenta">Datos de Cuenta/Servicio (Usuario/Clave)</label>
+                    <textarea id="editDatosCuenta" rows="3"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-sync-alt"></i> Guardar Cambios
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div id="pushNotification">
+        <i class="fas fa-exclamation-circle fa-lg" style="margin-right: 10px;"></i>
+        El servicio de <strong id="pushPlatform"></strong> para <strong id="pushClient"></strong> vence MAÑANA.
+        <button onclick="document.getElementById('pushNotification').classList.remove('show')">Cerrar</button>
+    </div>
+
+    <script>
+        // ============================================
+        // CONFIGURACIÓN DE JSONBIN
+        // ============================================
+        // IMPORTANTE: Reemplaza estos valores con los tuyos
+        const JSONBIN_API_KEY = '$2a$10$TU_API_KEY_AQUI'; // ⚠️ REEMPLAZAR
+        const JSONBIN_BIN_ID = 'TU_BIN_ID_AQUI'; // ⚠️ REEMPLAZAR
+        const JSONBIN_URL = `https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`;
+
+        // ============================================
+        // SISTEMA DE ALMACENAMIENTO EN LA NUBE
+        // ============================================
+        const CloudStorage = {
+            // Cargar datos desde JSONBin
+            async loadData() {
+                try {
+                    const response = await fetch(JSONBIN_URL + '/latest', {
+                        method: 'GET',
+                        headers: {
+                            'X-Master-Key': JSONBIN_API_KEY,
+                            'X-Bin-Meta': 'false'
+                        }
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Error al cargar datos: ' + response.status);
+                    }
+
+                    const data = await response.json();
+                    return data;
+                } catch (error) {
+                    console.error('Error cargando datos:', error);
+                    // Si falla, devolver estructura vacía
+                    return { ventas: [], usuarios: {}, nextId: 1 };
+                }
+            },
+
+            // Guardar datos en JSONBin
+            async saveData(data) {
+                try {
+                    const response = await fetch(JSONBIN_URL, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Master-Key': JSONBIN_API_KEY
+                        },
+                        body: JSON.stringify(data)
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Error al guardar datos: ' + response.status);
+                    }
+
+                    return true;
+                } catch (error) {
+                    console.error('Error guardando datos:', error);
+                    alert('⚠️ Error al guardar en la nube. Verifica tu conexión a internet.');
+                    return false;
+                }
+            }
+        };
+
+        // ============================================
+        // VARIABLES GLOBALES
+        // ============================================
+        let ventas = [];
+        let nextId = 1;
+        let DEVICE_ID = '';
+
+        // ============================================
+        // FUNCIONES DE UTILIDAD
+        // ============================================
+        function getDeviceFingerprint() {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            ctx.textBaseline = 'top';
+            ctx.font = '14px Arial';
+            ctx.fillText('Device ID', 2, 2);
+            const canvasData = canvas.toDataURL();
+            const fingerprint = {
+                screen: `${screen.width}x${screen.height}x${screen.colorDepth}`,
+                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                language: navigator.language,
+                platform: navigator.platform,
+                canvas: canvasData.slice(0, 50),
+                cores: navigator.hardwareConcurrency || 'unknown'
+            };
+            const fpString = JSON.stringify(fingerprint);
+            let hash = 0;
+            for (let i = 0; i < fpString.length; i++) {
+                const char = fpString.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash;
+            }
+            return Math.abs(hash).toString(16).toUpperCase().substring(0, 8);
+        }
+
+        function updateCloudStatus(status, message) {
+            const cloudStatus = document.getElementById('cloudStatus');
+            const icon = cloudStatus.querySelector('i');
+            const text = cloudStatus.querySelector('span');
+            
+            cloudStatus.className = 'cloud-status';
+            
+            if (status === 'connected') {
+                cloudStatus.classList.add('connected');
+                icon.className = 'fas fa-cloud-upload-alt';
+                text.textContent = message || '☁️ Sincronizado';
+            } else if (status === 'error') {
+                cloudStatus.classList.add('error');
+                icon.className = 'fas fa-exclamation-triangle';
+                text.textContent = message || '⚠️ Error de conexión';
+            } else {
+                icon.className = 'fas fa-sync fa-spin';
+                text.textContent = message || 'Sincronizando...';
+            }
+        }
+
+        function showLoading(show = true) {
+            const overlay = document.getElementById('loadingOverlay');
+            if (show) {
+                overlay.classList.remove('hidden');
+            } else {
+                overlay.classList.add('hidden');
+            }
+        }
+
+        async function initializeUser() {
+            DEVICE_ID = getDeviceFingerprint();
+            document.getElementById('deviceIdDisplay').textContent = DEVICE_ID;
+
+            // Cargar datos desde la nube
+            showLoading(true);
+            updateCloudStatus('loading', 'Cargando datos...');
+            
+            const cloudData = await CloudStorage.loadData();
+            
+            ventas = cloudData.ventas || [];
+            nextId = cloudData.nextId || 1;
+            
+            // Verificar si el usuario ya está registrado
+            let userName = cloudData.usuarios?.[DEVICE_ID];
+            
+            if (!userName) {
+                userName = prompt('¡Bienvenido a ULTRA LINK! 🎉\n\nPor favor, ingresa tu nombre:');
+                if (userName && userName.trim()) {
+                    userName = userName.trim();
+                    cloudData.usuarios = cloudData.usuarios || {};
+                    cloudData.usuarios[DEVICE_ID] = userName;
+                    await CloudStorage.saveData(cloudData);
+                } else {
+                    userName = 'Usuario';
+                }
+            }
+            
+            document.getElementById('welcomeMessage').textContent = `Bienvenido, ${userName}`;
+            updateCloudStatus('connected', '☁️ Conectado');
+            showLoading(false);
+        }
+
+        function updateClock() {
+            const now = new Date();
+            const options = {
+                weekday: 'short',
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            };
+            const dateTimeString = now.toLocaleDateString('es-AR', options);
+            document.getElementById('clockDisplay').textContent = dateTimeString;
+        }
+
+        function contactarDesarrollador() {
+            const mensaje = `Hola, te escribo desde la app ULTRA LINK (ID: ${DEVICE_ID}). Necesito ayuda con el gestor de ventas.`;
+            const encodedMessage = encodeURIComponent(mensaje);
+            const whatsappUrl = `https://wa.me/5493764327823?text=${encodedMessage}`;
+            window.open(whatsappUrl, '_blank');
+        }
+
+        function getDaysDifference(dateString) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const vencimiento = new Date(dateString);
+            vencimiento.setHours(0, 0, 0, 0);
+            const diffTime = vencimiento.getTime() - today.getTime();
+            return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        }
+
+        function getEstadoVenta(vencimientoDate) {
+            const diffDays = getDaysDifference(vencimientoDate);
+            if (diffDays < 0) return { text: 'Vencido', class: 'status-expired', days: diffDays };
+            if (diffDays <= 7) return { text: `Vence en ${diffDays} días`, class: 'status-expiring', days: diffDays };
+            return { text: 'Activo', class: 'status-active', days: diffDays };
+        }
+
+        const formatCurrency = (amount) => {
+            return new Intl.NumberFormat('es-AR', {
+                style: 'currency',
+                currency: 'ARS',
+                minimumFractionDigits: 2
+            }).format(amount);
+        };
+
+        function formatArgentinianWhatsAppNumber(number) {
+            let cleanNumber = number.replace(/\D/g, '');
+            if (cleanNumber.startsWith('549') && cleanNumber.length === 13) return cleanNumber;
+            if (cleanNumber.startsWith('54') && cleanNumber.length === 12) return `549${cleanNumber.substring(2)}`;
+            if (cleanNumber.length === 10) return `549${cleanNumber}`;
+            return cleanNumber;
+        }
+
+        // ============================================
+        // RENDERIZADO DEL DASHBOARD
+        // ============================================
+        function renderDashboard() {
+            const tablaVentasBody = document.querySelector('#tablaVentas tbody');
+            const tablaVencimientosBody = document.querySelector('#tablaVencimientos tbody');
+            tablaVentasBody.innerHTML = '';
+            tablaVencimientosBody.innerHTML = '';
+
+            let totalClientesActivos = 0, totalServiciosPorVencer = 0, totalServiciosVencidos = 0;
+            let gananciaDiaria = 0, gananciaSemanal = 0, gananciaMensual = 0, gananciaAnual = 0;
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const oneWeekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+            const oneMonthAgo = new Date(today.getFullYear(), today.getMonth() - 1, today.getDate());
+            const oneYearAgo = new Date(today.getFullYear() - 1, today.getMonth(), today.getDate());
+
+            ventas.sort((a, b) => new Date(a.fechaVencimiento) - new Date(b.fechaVencimiento)).forEach(venta => {
+                const estado = getEstadoVenta(venta.fechaVencimiento);
+                const precio = parseFloat(venta.precio);
+
+                if (estado.days >= 0) totalClientesActivos++;
+                if (estado.days >= 0 && estado.days <= 7) totalServiciosPorVencer++;
+                if (estado.days < 0) totalServiciosVencidos++;
+
+                const fechaVenta = new Date(venta.fechaEntrega);
+                fechaVenta.setHours(0, 0, 0, 0);
+                if (fechaVenta.getTime() === today.getTime()) gananciaDiaria += precio;
+                if (fechaVenta >= oneWeekAgo) gananciaSemanal += precio;
+                if (fechaVenta >= oneMonthAgo) gananciaMensual += precio;
+                if (fechaVenta >= oneYearAgo) gananciaAnual += precio;
+
+                const rowVenta = tablaVentasBody.insertRow();
+                rowVenta.innerHTML = `
+                    <td>${venta.id}</td>
+                    <td>${venta.nombreCliente}</td>
+                    <td><a href="https://wa.me/${venta.whatsappCliente_clean}" target="_blank" style="color: var(--primary);">${venta.whatsappCliente_clean}</a></td>
+                    <td>${venta.plataforma}</td>
+                    <td>${venta.fechaVencimiento}</td>
+                    <td>${formatCurrency(precio)}</td>
+                    <td><span class="status-badge ${estado.class}">${estado.text}</span></td>
+                    <td>
+                        <div class="action-btns">
+                            <button class="btn btn-sm btn-whatsapp" title="Enviar WhatsApp" onclick="enviarWhatsapp('${venta.whatsappCliente_clean}', '${venta.nombreCliente}', '${venta.plataforma}', '${estado.text}', '${venta.fechaVencimiento}')">
+                                <i class="fab fa-whatsapp"></i>
+                            </button>
+                            <button class="btn btn-sm btn-primary" title="Editar Venta" onclick="openEditModal(${venta.id})">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger" title="Eliminar Venta" onclick="eliminarVenta(${venta.id})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+
+                if (estado.days <= 7 || estado.days < 0) {
+                    const rowVencimiento = tablaVencimientosBody.insertRow();
+                    rowVencimiento.innerHTML = `
+                        <td>${venta.id}</td>
+                        <td>${venta.nombreCliente}</td>
+                        <td>${venta.plataforma}</td>
+                        <td>${venta.fechaVencimiento}</td>
+                        <td>${estado.days} días</td>
+                        <td><span class="status-badge ${estado.class}">${estado.text}</span></td>
+                        <td>
+                            <div class="action-btns">
+                                <button class="btn btn-sm btn-whatsapp" title="Enviar WhatsApp" onclick="enviarWhatsapp('${venta.whatsappCliente_clean}', '${venta.nombreCliente}', '${venta.plataforma}', '${estado.text}', '${venta.fechaVencimiento}')">
+                                    <i class="fab fa-whatsapp"></i>
+                                </button>
+                                <button class="btn btn-sm btn-primary" title="Renovar / Editar" onclick="openEditModal(${venta.id})">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                            </div>
+                        </td>
+                    `;
+                }
+
+                if (estado.days === 1) {
+                    showPushNotification(venta.nombreCliente, venta.plataforma);
+                }
+            });
+
+            document.getElementById('gananciaMensual').textContent = formatCurrency(gananciaMensual);
+            document.getElementById('totalClientes').textContent = totalClientesActivos;
+            document.getElementById('serviciosPorVencer').textContent = totalServiciosPorVencer;
+            document.getElementById('serviciosVencidos').textContent = totalServiciosVencidos;
+            document.getElementById('countVencidos').textContent = totalServiciosVencidos;
+            document.getElementById('countPorVencer').textContent = totalServiciosPorVencer;
+            document.getElementById('gananciaDiaria').textContent = formatCurrency(gananciaDiaria);
+            document.getElementById('gananciaSemanal').textContent = formatCurrency(gananciaSemanal);
+            document.getElementById('gananciaMensual2').textContent = formatCurrency(gananciaMensual);
+            document.getElementById('gananciaAnual').textContent = formatCurrency(gananciaAnual);
+
+            const alerta = document.getElementById('alertaVencimiento');
+            if (totalServiciosVencidos > 0 || totalServiciosPorVencer > 0) {
+                alerta.style.display = 'flex';
+            } else {
+                alerta.style.display = 'none';
+            }
+        }
+
+        // ============================================
+        // GESTIÓN DE VENTAS
+        // ============================================
+        async function registrarVenta(event) {
+            event.preventDefault();
+
+            const plataforma = document.getElementById('plataforma').value;
+            const nombreCliente = document.getElementById('nombreCliente').value;
+            const whatsappRaw = document.getElementById('whatsappCliente').value;
+            const datosCuenta = document.getElementById('datosCuenta').value;
+            const precio = document.getElementById('precioVenta').value;
+            const fechaEntrega = document.getElementById('fechaEntrega').value;
+            const fechaVencimiento = document.getElementById('fechaVencimiento').value;
+
+            if (isNaN(parseFloat(precio))) {
+                alert('El precio ingresado no es válido.');
+                return;
+            }
+
+            const whatsappClean = formatArgentinianWhatsAppNumber(whatsappRaw);
+
+            const nuevaVenta = {
+                id: nextId++,
+                plataforma: plataforma,
+                nombreCliente: nombreCliente,
+                whatsappCliente: whatsappRaw,
+                whatsappCliente_clean: whatsappClean,
+                datosCuenta: datosCuenta,
+                precio: parseFloat(precio).toFixed(2),
+                fechaEntrega: fechaEntrega,
+                fechaVencimiento: fechaVencimiento,
+            };
+
+            ventas.push(nuevaVenta);
+
+            // Guardar en la nube
+            updateCloudStatus('loading', 'Guardando...');
+            const cloudData = await CloudStorage.loadData();
+            cloudData.ventas = ventas;
+            cloudData.nextId = nextId;
+            const success = await CloudStorage.saveData(cloudData);
+
+            if (success) {
+                updateCloudStatus('connected', '☁️ Guardado');
+                document.getElementById('formNuevaVenta').reset();
+                closeModal('modalNuevaVenta');
+                renderDashboard();
+                alert(`✅ Venta de ${nuevaVenta.plataforma} a ${nuevaVenta.nombreCliente} registrada con éxito. ID: ${nuevaVenta.id}`);
+            }
+        }
+
+        async function eliminarVenta(id) {
+            if (confirm(`¿Está seguro de que desea eliminar la venta ID ${id}? Esta acción es irreversible.`)) {
+                const initialLength = ventas.length;
+                ventas = ventas.filter(venta => venta.id !== id);
+                
+                if (ventas.length < initialLength) {
+                    // Guardar en la nube
+                    updateCloudStatus('loading', 'Eliminando...');
+                    const cloudData = await CloudStorage.loadData();
+                    cloudData.ventas = ventas;
+                    const success = await CloudStorage.saveData(cloudData);
+
+                    if (success) {
+                        updateCloudStatus('connected', '☁️ Actualizado');
+                        renderDashboard();
+                        alert(`✅ Venta ID ${id} eliminada.`);
+                    }
+                } else {
+                    alert(`❌ Error: No se encontró la venta ID ${id}.`);
+                }
+            }
+        }
+
+        function openEditModal(id) {
+            const venta = ventas.find(v => v.id === id);
+            if (!venta) return alert('Venta no encontrada para editar.');
+
+            document.getElementById('editVentaIdDisplay').textContent = id;
+            document.getElementById('editVentaId').value = id;
+            document.getElementById('editPlataforma').value = venta.plataforma;
+            document.getElementById('editNombreCliente').value = venta.nombreCliente;
+            document.getElementById('editWhatsappCliente').value = venta.whatsappCliente;
+            document.getElementById('editDatosCuenta').value = venta.datosCuenta;
+            document.getElementById('editPrecioVenta').value = parseFloat(venta.precio).toFixed(2);
+            document.getElementById('editFechaEntrega').value = venta.fechaEntrega;
+            document.getElementById('editFechaVencimiento').value = venta.fechaVencimiento;
+            openModal('modalEditarVenta');
+        }
+
+        async function guardarEdicion(event) {
+            event.preventDefault();
+            const id = parseInt(document.getElementById('editVentaId').value);
+            const index = ventas.findIndex(v => v.id === id);
+
+            if (index === -1) {
+                closeModal('modalEditarVenta');
+                return alert('Error: Venta no encontrada.');
+            }
+
+            const precio = document.getElementById('editPrecioVenta').value;
+            if (isNaN(parseFloat(precio))) {
+                alert('El precio ingresado no es válido.');
+                return;
+            }
+
+            const whatsappRaw = document.getElementById('editWhatsappCliente').value;
+            const whatsappClean = formatArgentinianWhatsAppNumber(whatsappRaw);
+
+            ventas[index] = {
+                id: id,
+                plataforma: document.getElementById('editPlataforma').value,
+                nombreCliente: document.getElementById('editNombreCliente').value,
+                whatsappCliente: whatsappRaw,
+                whatsappCliente_clean: whatsappClean,
+                datosCuenta: document.getElementById('editDatosCuenta').value,
+                precio: parseFloat(precio).toFixed(2),
+                fechaEntrega: document.getElementById('editFechaEntrega').value,
+                fechaVencimiento: document.getElementById('editFechaVencimiento').value,
+            };
+
+            // Guardar en la nube
+            updateCloudStatus('loading', 'Actualizando...');
+            const cloudData = await CloudStorage.loadData();
+            cloudData.ventas = ventas;
+            const success = await CloudStorage.saveData(cloudData);
+
+            if (success) {
+                updateCloudStatus('connected', '☁️ Actualizado');
+                closeModal('modalEditarVenta');
+                renderDashboard();
+                alert(`✅ Venta ID ${id} actualizada con éxito.`);
+            }
+        }
+
+        function enviarWhatsapp(cleanNumber, cliente, plataforma, estado, fechaVencimiento) {
+            let mensaje;
+            let estadoLower = estado.toLowerCase();
+
+            if (estadoLower.includes('vencido')) {
+                mensaje = `¡Hola ${cliente}! 👋 Te recuerdo que tu servicio de *${plataforma}* ya se encuentra *VENCIDO* 😔. Para reactivarlo, por favor contactame. ¡Gracias!`;
+            } else if (estadoLower.includes('vence')) {
+                mensaje = `¡Hola ${cliente}! 👋 Te escribo para recordarte que tu servicio de *${plataforma}* vence el *${fechaVencimiento}*. Podés renovarlo ahora para evitar interrupciones. ¡Gracias!`;
+            } else {
+                mensaje = `¡Hola ${cliente}! 👋 Te escribo para confirmar que tu servicio de *${plataforma}* está activo y funcionando. Vence el *${fechaVencimiento}*. Cualquier duda, avisame.`;
+            }
+
+            const encodedMessage = encodeURIComponent(mensaje);
+            const whatsappUrl = `https://wa.me/${cleanNumber}?text=${encodedMessage}`;
+            window.open(whatsappUrl, '_blank');
+        }
+
+        // ============================================
+        // FUNCIONES DE UI
+        // ============================================
+        function openModal(id) {
+            document.getElementById(id).style.display = 'block';
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+
+        function showPushNotification(client, platform) {
+            document.getElementById('pushClient').textContent = client;
+            document.getElementById('pushPlatform').textContent = platform;
+            const notification = document.getElementById('pushNotification');
+            if (!notification.classList.contains('show')) {
+                notification.classList.add('show');
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                }, 8000);
+            }
+        }
+
+        function exportToCSV() {
+            if (ventas.length === 0) return alert('No hay datos para exportar.');
+
+            const headers = ["ID", "Cliente", "WhatsApp", "Plataforma", "Datos de Cuenta", "Precio", "Fecha Entrega", "Fecha Vencimiento", "Estado"];
+            let csvContent = headers.join(";") + "\r\n";
+
+            ventas.forEach(venta => {
+                const estado = getEstadoVenta(venta.fechaVencimiento).text;
+                const row = [
+                    venta.id,
+                    `"${venta.nombreCliente.replace(/"/g, '""')}"`,
+                    venta.whatsappCliente_clean,
+                    venta.plataforma,
+                    `"${venta.datosCuenta.replace(/(\r\n|\n|\r)/gm, ' | ').replace(/"/g, '""')}"`,
+                    venta.precio,
+                    venta.fechaEntrega,
+                    venta.fechaVencimiento,
+                    estado
+                ];
+                csvContent += row.join(";") + "\r\n";
+            });
+
+            const blob = new Blob(["\ufeff" + csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+
+            if (link.download !== undefined) {
+                const url = URL.createObjectURL(blob);
+                link.setAttribute("href", url);
+                link.setAttribute("download", `ULTRA_LINK_Ventas_${new Date().toISOString().split('T')[0]}.csv`);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                alert('✅ Datos exportados a CSV con éxito.');
+            }
+        }
+
+        // ============================================
+        // EVENT LISTENERS
+        // ============================================
+        document.querySelectorAll('.panel-tabs .tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                document.querySelectorAll('.panel-tabs .tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                this.classList.add('active');
+                const targetId = this.dataset.tab;
+                document.getElementById(targetId).classList.add('active');
+            });
+        });
+
+        document.getElementById('themeSwitch').addEventListener('click', function() {
+            const isDarkMode = !document.body.classList.contains('dark-mode');
+            document.body.classList.toggle('dark-mode', isDarkMode);
+            localStorage.setItem('darkMode', isDarkMode);
+            this.querySelector('i').className = isDarkMode ? 'fas fa-moon' : 'fas fa-sun';
+        });
+
+        if (localStorage.getItem('darkMode') === 'true') {
+            document.body.classList.add('dark-mode');
+            document.getElementById('themeSwitch').querySelector('i').className = 'fas fa-moon';
+        }
+
+        document.addEventListener('keydown', function(event) {
+            if (event.key === "Escape") {
+                closeModal('modalNuevaVenta');
+                closeModal('modalEditarVenta');
+            }
+        });
+
+        // ============================================
+        // INICIALIZACIÓN
+        // ============================================
+        document.addEventListener('DOMContentLoaded', async function() {
+            setInterval(updateClock, 1000);
+            updateClock();
+            
+            await initializeUser();
+            renderDashboard();
+            
+            closeModal('modalNuevaVenta');
+            closeModal('modalEditarVenta');
+        });
+
+        // Exponer funciones globalmente
+        window.enviarWhatsapp = enviarWhatsapp;
+        window.openEditModal = openEditModal;
+        window.eliminarVenta = eliminarVenta;
+        window.openModal = openModal;
+        window.closeModal = closeModal;
+        window.exportToCSV = exportToCSV;
+        window.contactarDesarrollador = contactarDesarrollador;
+        window.registrarVenta = registrarVenta;
+        window.guardarEdicion = guardarEdicion;
+    </script>
+</body>
+</html>
